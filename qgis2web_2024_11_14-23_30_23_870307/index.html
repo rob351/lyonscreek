@@ -1,0 +1,1163 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title>Lyons Creek Natural Heritage Study</title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/multi-style-layer.js"></script>
+        <script src="js/leaflet-svg-shape-markers.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="data/StudyAreaLyonsCreekTopofBank15m_1.js"></script>
+        <script src="data/AssessmentParcels_2.js"></script>
+        <script src="data/Woodlands_3.js"></script>
+        <script src="data/ProvinciallySignificantLyonsCreekWetlandComplex_4.js"></script>
+        <script src="data/AreaC_5.js"></script>
+        <script src="data/AreaB_6.js"></script>
+        <script src="data/AreaA_7.js"></script>
+        <script src="data/AreaC_8.js"></script>
+        <script src="data/AreaB_9.js"></script>
+        <script src="data/AreaA_10.js"></script>
+        <script src="data/SpecialConcernandProvinciallyRareSpecies_11.js"></script>
+        <script src="data/SignificantSpeicesBirds_12.js"></script>
+        <script src="data/SignificantSpeicesReptile_13.js"></script>
+        <script src="data/SignificantSpeciesButterfly_14.js"></script>
+        <script src="data/SignificantSpeciesDragonflyDamselfly_15.js"></script>
+        <script src="data/SignificantSpeicesPlants_16.js"></script>
+        <script>
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[42.97241226036649,-79.22246797920006],[42.98546355171516,-79.19774400682934]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var title = new L.Control({'position':'topleft'});
+        title.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this.update();
+            return this._div;
+        };
+        title.update = function () {
+            this._div.innerHTML = '<h2>Lyons Creek Natural Heritage Study</h2>';
+        };
+        title.addTo(map);
+        var abstract = new L.Control({'position':'bottomleft'});
+        abstract.onAdd = function (map) {
+            this._div = L.DomUtil.create('div',
+            'leaflet-control abstract');
+            this._div.id = 'abstract'
+
+                abstract.show();
+                return this._div;
+            };
+            abstract.show = function () {
+                this._div.classList.remove("abstract");
+                this._div.classList.add("abstractUncollapsed");
+                this._div.innerHTML = 'This is a webmap that has been created to share significant observations made through the Lyons Creek natural heritage study completed by Terrastory in 2023 and 2024';
+        };
+        abstract.addTo(map);
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_GoogleHybrid_0');
+        map.getPane('pane_GoogleHybrid_0').style.zIndex = 400;
+        var layer_GoogleHybrid_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            pane: 'pane_GoogleHybrid_0',
+            opacity: 1.0,
+            attribution: '<a href="https://www.google.at/permissions/geoguidelines/attr-guide.html">Map data ©2015 Google</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 20
+        });
+        layer_GoogleHybrid_0;
+        map.addLayer(layer_GoogleHybrid_0);
+        function pop_StudyAreaLyonsCreekTopofBank15m_1(feature, layer) {
+        }
+
+        function style_StudyAreaLyonsCreekTopofBank15m_1_0() {
+            return {
+                pane: 'pane_StudyAreaLyonsCreekTopofBank15m_1',
+                opacity: 1,
+                color: 'rgba(237,230,23,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 2.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_StudyAreaLyonsCreekTopofBank15m_1');
+        map.getPane('pane_StudyAreaLyonsCreekTopofBank15m_1').style.zIndex = 401;
+        map.getPane('pane_StudyAreaLyonsCreekTopofBank15m_1').style['mix-blend-mode'] = 'normal';
+        var layer_StudyAreaLyonsCreekTopofBank15m_1 = new L.geoJson(json_StudyAreaLyonsCreekTopofBank15m_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_StudyAreaLyonsCreekTopofBank15m_1',
+            layerName: 'layer_StudyAreaLyonsCreekTopofBank15m_1',
+            pane: 'pane_StudyAreaLyonsCreekTopofBank15m_1',
+            onEachFeature: pop_StudyAreaLyonsCreekTopofBank15m_1,
+            style: style_StudyAreaLyonsCreekTopofBank15m_1_0,
+        });
+        bounds_group.addLayer(layer_StudyAreaLyonsCreekTopofBank15m_1);
+        map.addLayer(layer_StudyAreaLyonsCreekTopofBank15m_1);
+        function pop_AssessmentParcels_2(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Street Number</th>\
+                        <td class="visible-with-data" id="Full_StreetNo">' + (feature.properties['Full_StreetNo'] !== null ? autolinker.link(feature.properties['Full_StreetNo'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Street Name</th>\
+                        <td class="visible-with-data" id="StreetName">' + (feature.properties['StreetName'] !== null ? autolinker.link(feature.properties['StreetName'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Street Type</th>\
+                        <td class="visible-with-data" id="StreetType">' + (feature.properties['StreetType'] !== null ? autolinker.link(feature.properties['StreetType'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_AssessmentParcels_2_0() {
+            return {
+                pane: 'pane_AssessmentParcels_2',
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(114,155,111,0.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_AssessmentParcels_2');
+        map.getPane('pane_AssessmentParcels_2').style.zIndex = 402;
+        map.getPane('pane_AssessmentParcels_2').style['mix-blend-mode'] = 'normal';
+        var layer_AssessmentParcels_2 = new L.geoJson(json_AssessmentParcels_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_AssessmentParcels_2',
+            layerName: 'layer_AssessmentParcels_2',
+            pane: 'pane_AssessmentParcels_2',
+            onEachFeature: pop_AssessmentParcels_2,
+            style: style_AssessmentParcels_2_0,
+        });
+        bounds_group.addLayer(layer_AssessmentParcels_2);
+        map.addLayer(layer_AssessmentParcels_2);
+        function pop_Woodlands_3(feature, layer) {
+            var popupContent = '<table>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Woodlands_3_0() {
+            return {
+                pane: 'pane_Woodlands_3',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(178,223,138,0.5019607843137255)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Woodlands_3');
+        map.getPane('pane_Woodlands_3').style.zIndex = 403;
+        map.getPane('pane_Woodlands_3').style['mix-blend-mode'] = 'normal';
+        var layer_Woodlands_3 = new L.geoJson(json_Woodlands_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Woodlands_3',
+            layerName: 'layer_Woodlands_3',
+            pane: 'pane_Woodlands_3',
+            onEachFeature: pop_Woodlands_3,
+            style: style_Woodlands_3_0,
+        });
+        bounds_group.addLayer(layer_Woodlands_3);
+        map.addLayer(layer_Woodlands_3);
+        function pop_ProvinciallySignificantLyonsCreekWetlandComplex_4(feature, layer) {
+        }
+
+        function style_ProvinciallySignificantLyonsCreekWetlandComplex_4_0() {
+            return {
+                pane: 'pane_ProvinciallySignificantLyonsCreekWetlandComplex_4',
+                opacity: 1,
+                color: 'rgba(31,120,180,0.5019607843137255)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0, 
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_ProvinciallySignificantLyonsCreekWetlandComplex_4_1() {
+            return {
+                pane: 'pane_ProvinciallySignificantLyonsCreekWetlandComplex_4',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_ProvinciallySignificantLyonsCreekWetlandComplex_4');
+        map.getPane('pane_ProvinciallySignificantLyonsCreekWetlandComplex_4').style.zIndex = 404;
+        map.getPane('pane_ProvinciallySignificantLyonsCreekWetlandComplex_4').style['mix-blend-mode'] = 'normal';
+        var layer_ProvinciallySignificantLyonsCreekWetlandComplex_4 = new L.geoJson.multiStyle(json_ProvinciallySignificantLyonsCreekWetlandComplex_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_ProvinciallySignificantLyonsCreekWetlandComplex_4',
+            layerName: 'layer_ProvinciallySignificantLyonsCreekWetlandComplex_4',
+            pane: 'pane_ProvinciallySignificantLyonsCreekWetlandComplex_4',
+            onEachFeature: pop_ProvinciallySignificantLyonsCreekWetlandComplex_4,
+            styles: [style_ProvinciallySignificantLyonsCreekWetlandComplex_4_0,style_ProvinciallySignificantLyonsCreekWetlandComplex_4_1,]
+        });
+        bounds_group.addLayer(layer_ProvinciallySignificantLyonsCreekWetlandComplex_4);
+        map.addLayer(layer_ProvinciallySignificantLyonsCreekWetlandComplex_4);
+        function pop_AreaC_5(feature, layer) {
+            var popupContent = '<table>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        var pattern_AreaC_5_0 = new L.StripePattern({
+            weight: 0.3,
+            spaceWeight: 2.0,
+            color: '#d4ffa9',
+            opacity: 1.0,
+            spaceOpacity: 0,
+            angle: 315
+        });
+        pattern_AreaC_5_0.addTo(map);
+        function style_AreaC_5_0() {
+            return {
+                pane: 'pane_AreaC_5',
+                stroke: false,
+                fillOpacity: 1,
+                fillPattern: pattern_AreaC_5_0,
+                interactive: true,
+            }
+        }
+        var pattern_AreaC_5_1 = new L.StripePattern({
+            weight: 0.3,
+            spaceWeight: 2.0,
+            color: '#d4ffa9',
+            opacity: 1.0,
+            spaceOpacity: 0,
+            angle: 225
+        });
+        pattern_AreaC_5_1.addTo(map);
+        function style_AreaC_5_1() {
+            return {
+                pane: 'pane_AreaC_5',
+                stroke: false,
+                fillOpacity: 1,
+                fillPattern: pattern_AreaC_5_1,
+                interactive: true,
+            }
+        }
+        function style_AreaC_5_2() {
+            return {
+                pane: 'pane_AreaC_5',
+                opacity: 1,
+                color: 'rgba(212,255,169,0.5019607843137255)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 2.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_AreaC_5');
+        map.getPane('pane_AreaC_5').style.zIndex = 405;
+        map.getPane('pane_AreaC_5').style['mix-blend-mode'] = 'normal';
+        var layer_AreaC_5 = new L.geoJson.multiStyle(json_AreaC_5, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_AreaC_5',
+            layerName: 'layer_AreaC_5',
+            pane: 'pane_AreaC_5',
+            onEachFeature: pop_AreaC_5,
+            styles: [style_AreaC_5_0,style_AreaC_5_1,style_AreaC_5_2,]
+        });
+        bounds_group.addLayer(layer_AreaC_5);
+        map.addLayer(layer_AreaC_5);
+        function pop_AreaB_6(feature, layer) {
+        }
+
+        var pattern_AreaB_6_0 = new L.StripePattern({
+            weight: 0.3,
+            spaceWeight: 2.0,
+            color: '#f74cc4',
+            opacity: 1.0,
+            spaceOpacity: 0,
+            angle: 315
+        });
+        pattern_AreaB_6_0.addTo(map);
+        function style_AreaB_6_0() {
+            return {
+                pane: 'pane_AreaB_6',
+                stroke: false,
+                fillOpacity: 1,
+                fillPattern: pattern_AreaB_6_0,
+                interactive: true,
+            }
+        }
+        var pattern_AreaB_6_1 = new L.StripePattern({
+            weight: 0.3,
+            spaceWeight: 2.0,
+            color: '#f74cc4',
+            opacity: 1.0,
+            spaceOpacity: 0,
+            angle: 225
+        });
+        pattern_AreaB_6_1.addTo(map);
+        function style_AreaB_6_1() {
+            return {
+                pane: 'pane_AreaB_6',
+                stroke: false,
+                fillOpacity: 1,
+                fillPattern: pattern_AreaB_6_1,
+                interactive: true,
+            }
+        }
+        function style_AreaB_6_2() {
+            return {
+                pane: 'pane_AreaB_6',
+                opacity: 1,
+                color: 'rgba(247,76,196,0.5019607843137255)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 2.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_AreaB_6');
+        map.getPane('pane_AreaB_6').style.zIndex = 406;
+        map.getPane('pane_AreaB_6').style['mix-blend-mode'] = 'normal';
+        var layer_AreaB_6 = new L.geoJson.multiStyle(json_AreaB_6, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_AreaB_6',
+            layerName: 'layer_AreaB_6',
+            pane: 'pane_AreaB_6',
+            onEachFeature: pop_AreaB_6,
+            styles: [style_AreaB_6_0,style_AreaB_6_1,style_AreaB_6_2,]
+        });
+        bounds_group.addLayer(layer_AreaB_6);
+        map.addLayer(layer_AreaB_6);
+        function pop_AreaA_7(feature, layer) {
+        }
+
+        var pattern_AreaA_7_0 = new L.StripePattern({
+            weight: 0.3,
+            spaceWeight: 2.0,
+            color: '#31c8ff',
+            opacity: 1.0,
+            spaceOpacity: 0,
+            angle: 315
+        });
+        pattern_AreaA_7_0.addTo(map);
+        function style_AreaA_7_0() {
+            return {
+                pane: 'pane_AreaA_7',
+                stroke: false,
+                fillOpacity: 1,
+                fillPattern: pattern_AreaA_7_0,
+                interactive: true,
+            }
+        }
+        var pattern_AreaA_7_1 = new L.StripePattern({
+            weight: 0.3,
+            spaceWeight: 2.0,
+            color: '#31c8ff',
+            opacity: 1.0,
+            spaceOpacity: 0,
+            angle: 225
+        });
+        pattern_AreaA_7_1.addTo(map);
+        function style_AreaA_7_1() {
+            return {
+                pane: 'pane_AreaA_7',
+                stroke: false,
+                fillOpacity: 1,
+                fillPattern: pattern_AreaA_7_1,
+                interactive: true,
+            }
+        }
+        function style_AreaA_7_2() {
+            return {
+                pane: 'pane_AreaA_7',
+                opacity: 1,
+                color: 'rgba(49,200,255,0.5019607843137255)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 2.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_AreaA_7');
+        map.getPane('pane_AreaA_7').style.zIndex = 407;
+        map.getPane('pane_AreaA_7').style['mix-blend-mode'] = 'normal';
+        var layer_AreaA_7 = new L.geoJson.multiStyle(json_AreaA_7, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_AreaA_7',
+            layerName: 'layer_AreaA_7',
+            pane: 'pane_AreaA_7',
+            onEachFeature: pop_AreaA_7,
+            styles: [style_AreaA_7_0,style_AreaA_7_1,style_AreaA_7_2,]
+        });
+        bounds_group.addLayer(layer_AreaA_7);
+        map.addLayer(layer_AreaA_7);
+        function pop_AreaC_8(feature, layer) {
+            var popupContent = '<table>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_AreaC_8_0() {
+            return {
+                pane: 'pane_AreaC_8',
+                opacity: 1,
+                color: 'rgba(212,255,169,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 3.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_AreaC_8');
+        map.getPane('pane_AreaC_8').style.zIndex = 408;
+        map.getPane('pane_AreaC_8').style['mix-blend-mode'] = 'normal';
+        var layer_AreaC_8 = new L.geoJson(json_AreaC_8, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_AreaC_8',
+            layerName: 'layer_AreaC_8',
+            pane: 'pane_AreaC_8',
+            onEachFeature: pop_AreaC_8,
+            style: style_AreaC_8_0,
+        });
+        bounds_group.addLayer(layer_AreaC_8);
+        map.addLayer(layer_AreaC_8);
+        function pop_AreaB_9(feature, layer) {
+            var popupContent = '<table>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_AreaB_9_0() {
+            return {
+                pane: 'pane_AreaB_9',
+                opacity: 1,
+                color: 'rgba(247,76,196,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 3.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_AreaB_9');
+        map.getPane('pane_AreaB_9').style.zIndex = 409;
+        map.getPane('pane_AreaB_9').style['mix-blend-mode'] = 'normal';
+        var layer_AreaB_9 = new L.geoJson(json_AreaB_9, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_AreaB_9',
+            layerName: 'layer_AreaB_9',
+            pane: 'pane_AreaB_9',
+            onEachFeature: pop_AreaB_9,
+            style: style_AreaB_9_0,
+        });
+        bounds_group.addLayer(layer_AreaB_9);
+        map.addLayer(layer_AreaB_9);
+        function pop_AreaA_10(feature, layer) {
+            var popupContent = '<table>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_AreaA_10_0() {
+            return {
+                pane: 'pane_AreaA_10',
+                opacity: 1,
+                color: 'rgba(49,200,255,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 3.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_AreaA_10');
+        map.getPane('pane_AreaA_10').style.zIndex = 410;
+        map.getPane('pane_AreaA_10').style['mix-blend-mode'] = 'normal';
+        var layer_AreaA_10 = new L.geoJson(json_AreaA_10, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_AreaA_10',
+            layerName: 'layer_AreaA_10',
+            pane: 'pane_AreaA_10',
+            onEachFeature: pop_AreaA_10,
+            style: style_AreaA_10_0,
+        });
+        bounds_group.addLayer(layer_AreaA_10);
+        map.addLayer(layer_AreaA_10);
+        function pop_SpecialConcernandProvinciallyRareSpecies_11(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Species</th>\
+                        <td class="visible-with-data" id="Label">' + (feature.properties['Label'] !== null ? autolinker.link(feature.properties['Label'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SpecialConcernandProvinciallyRareSpecies_11_0(feature) {
+            switch(String(feature.properties['Label'])) {
+                case 'Barn Swallow':
+                    return {
+                pane: 'pane_SpecialConcernandProvinciallyRareSpecies_11',
+                radius: 8.8,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(178,223,138,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SpecialConcernandProvinciallyRareSpecies_11');
+        map.getPane('pane_SpecialConcernandProvinciallyRareSpecies_11').style.zIndex = 411;
+        map.getPane('pane_SpecialConcernandProvinciallyRareSpecies_11').style['mix-blend-mode'] = 'normal';
+        var layer_SpecialConcernandProvinciallyRareSpecies_11 = new L.geoJson(json_SpecialConcernandProvinciallyRareSpecies_11, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_SpecialConcernandProvinciallyRareSpecies_11',
+            layerName: 'layer_SpecialConcernandProvinciallyRareSpecies_11',
+            pane: 'pane_SpecialConcernandProvinciallyRareSpecies_11',
+            onEachFeature: pop_SpecialConcernandProvinciallyRareSpecies_11,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.shapeMarker(latlng, style_SpecialConcernandProvinciallyRareSpecies_11_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_SpecialConcernandProvinciallyRareSpecies_11);
+        map.addLayer(layer_SpecialConcernandProvinciallyRareSpecies_11);
+        function pop_SignificantSpeicesBirds_12(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Species</th>\
+                        <td class="visible-with-data" id="Label">' + (feature.properties['Label'] !== null ? autolinker.link(feature.properties['Label'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SignificantSpeicesBirds_12_0(feature) {
+            switch(String(feature.properties['Label'])) {
+                case 'Common Nighthawk (Chordeiles minor)':
+                    return {
+                pane: 'pane_SignificantSpeicesBirds_12',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(216,125,137,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SignificantSpeicesBirds_12');
+        map.getPane('pane_SignificantSpeicesBirds_12').style.zIndex = 412;
+        map.getPane('pane_SignificantSpeicesBirds_12').style['mix-blend-mode'] = 'normal';
+        var layer_SignificantSpeicesBirds_12 = new L.geoJson(json_SignificantSpeicesBirds_12, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_SignificantSpeicesBirds_12',
+            layerName: 'layer_SignificantSpeicesBirds_12',
+            pane: 'pane_SignificantSpeicesBirds_12',
+            onEachFeature: pop_SignificantSpeicesBirds_12,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_SignificantSpeicesBirds_12_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_SignificantSpeicesBirds_12);
+        map.addLayer(layer_SignificantSpeicesBirds_12);
+        function pop_SignificantSpeicesReptile_13(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Species</th>\
+                        <td class="visible-with-data" id="Label">' + (feature.properties['Label'] !== null ? autolinker.link(feature.properties['Label'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SignificantSpeicesReptile_13_0(feature) {
+            switch(String(feature.properties['Label'])) {
+                case 'Snake Hibernacula':
+                    return {
+                pane: 'pane_SignificantSpeicesReptile_13',
+                shape: 'diamond',
+                radius: 8.8,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(43,231,159,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'MPTU':
+                    return {
+                pane: 'pane_SignificantSpeicesReptile_13',
+                shape: 'diamond',
+                radius: 8.8,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(195,213,61,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Turtle Nesting (Snapping Turtle)':
+                    return {
+                pane: 'pane_SignificantSpeicesReptile_13',
+                shape: 'diamond',
+                radius: 8.8,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(211,13,89,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Turtle Nesting (Species unknown)':
+                    return {
+                pane: 'pane_SignificantSpeicesReptile_13',
+                shape: 'diamond',
+                radius: 8.8,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(37,13,219,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SignificantSpeicesReptile_13');
+        map.getPane('pane_SignificantSpeicesReptile_13').style.zIndex = 413;
+        map.getPane('pane_SignificantSpeicesReptile_13').style['mix-blend-mode'] = 'normal';
+        var layer_SignificantSpeicesReptile_13 = new L.geoJson(json_SignificantSpeicesReptile_13, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_SignificantSpeicesReptile_13',
+            layerName: 'layer_SignificantSpeicesReptile_13',
+            pane: 'pane_SignificantSpeicesReptile_13',
+            onEachFeature: pop_SignificantSpeicesReptile_13,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.shapeMarker(latlng, style_SignificantSpeicesReptile_13_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_SignificantSpeicesReptile_13);
+        map.addLayer(layer_SignificantSpeicesReptile_13);
+        function pop_SignificantSpeciesButterfly_14(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Species</th>\
+                        <td class="visible-with-data" id="Label">' + (feature.properties['Label'] !== null ? autolinker.link(feature.properties['Label'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SignificantSpeciesButterfly_14_0(feature) {
+            switch(String(feature.properties['Label'])) {
+                case 'American Copper (Lycaena phlaes)':
+                    return {
+                pane: 'pane_SignificantSpeciesButterfly_14',
+                radius: 7.0,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(86,51,227,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Monarch (Danaus plexippus)':
+                    return {
+                pane: 'pane_SignificantSpeciesButterfly_14',
+                radius: 7.0,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(187,224,40,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SignificantSpeciesButterfly_14');
+        map.getPane('pane_SignificantSpeciesButterfly_14').style.zIndex = 414;
+        map.getPane('pane_SignificantSpeciesButterfly_14').style['mix-blend-mode'] = 'normal';
+        var layer_SignificantSpeciesButterfly_14 = new L.geoJson(json_SignificantSpeciesButterfly_14, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_SignificantSpeciesButterfly_14',
+            layerName: 'layer_SignificantSpeciesButterfly_14',
+            pane: 'pane_SignificantSpeciesButterfly_14',
+            onEachFeature: pop_SignificantSpeciesButterfly_14,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.shapeMarker(latlng, style_SignificantSpeciesButterfly_14_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_SignificantSpeciesButterfly_14);
+        map.addLayer(layer_SignificantSpeciesButterfly_14);
+        function pop_SignificantSpeciesDragonflyDamselfly_15(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Species</th>\
+                        <td class="visible-with-data" id="Label">' + (feature.properties['Label'] !== null ? autolinker.link(feature.properties['Label'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SignificantSpeciesDragonflyDamselfly_15_0(feature) {
+            switch(String(feature.properties['Label'])) {
+                case 'Canada Darner (Aeshna canadensis)':
+                    return {
+                pane: 'pane_SignificantSpeciesDragonflyDamselfly_15',
+                radius: 9.2,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(95,127,210,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Cyrano Darner (Nasiaeschna pentacantha)':
+                    return {
+                pane: 'pane_SignificantSpeciesDragonflyDamselfly_15',
+                radius: 9.2,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(201,169,83,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Elegant Spreadwing (Lestes inaequalis)':
+                    return {
+                pane: 'pane_SignificantSpeciesDragonflyDamselfly_15',
+                radius: 9.2,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(205,94,124,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Prince Baskettail (Epitheca princeps)':
+                    return {
+                pane: 'pane_SignificantSpeciesDragonflyDamselfly_15',
+                radius: 9.2,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(149,223,120,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Slender Spreadwing (Lestes rectangularis)':
+                    return {
+                pane: 'pane_SignificantSpeciesDragonflyDamselfly_15',
+                radius: 9.2,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(35,232,176,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Vesper Bluet (Enallagma vesperum)':
+                    return {
+                pane: 'pane_SignificantSpeciesDragonflyDamselfly_15',
+                radius: 9.2,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(155,18,209,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SignificantSpeciesDragonflyDamselfly_15');
+        map.getPane('pane_SignificantSpeciesDragonflyDamselfly_15').style.zIndex = 415;
+        map.getPane('pane_SignificantSpeciesDragonflyDamselfly_15').style['mix-blend-mode'] = 'normal';
+        var layer_SignificantSpeciesDragonflyDamselfly_15 = new L.geoJson(json_SignificantSpeciesDragonflyDamselfly_15, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_SignificantSpeciesDragonflyDamselfly_15',
+            layerName: 'layer_SignificantSpeciesDragonflyDamselfly_15',
+            pane: 'pane_SignificantSpeciesDragonflyDamselfly_15',
+            onEachFeature: pop_SignificantSpeciesDragonflyDamselfly_15,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.shapeMarker(latlng, style_SignificantSpeciesDragonflyDamselfly_15_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_SignificantSpeciesDragonflyDamselfly_15);
+        map.addLayer(layer_SignificantSpeciesDragonflyDamselfly_15);
+        function pop_SignificantSpeicesPlants_16(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Species</th>\
+                        <td class="visible-with-data" id="Label">' + (feature.properties['Label'] !== null ? autolinker.link(feature.properties['Label'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SignificantSpeicesPlants_16_0(feature) {
+            switch(String(feature.properties['Label'])) {
+                case 'Floating Crystalwort (Riccia fluitans)':
+                    return {
+                pane: 'pane_SignificantSpeicesPlants_16',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(127,121,237,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Nuttall\'s Waterweed (Elodea nuttallii)':
+                    return {
+                pane: 'pane_SignificantSpeicesPlants_16',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(125,232,185,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Small Yellow Fox Sedge (Carex annectens var. xanthocarpa)':
+                    return {
+                pane: 'pane_SignificantSpeicesPlants_16',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(206,83,138,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Smartweed Dodder (Cuscuta polygonorum) ':
+                    return {
+                pane: 'pane_SignificantSpeicesPlants_16',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(208,217,45,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SignificantSpeicesPlants_16');
+        map.getPane('pane_SignificantSpeicesPlants_16').style.zIndex = 416;
+        map.getPane('pane_SignificantSpeicesPlants_16').style['mix-blend-mode'] = 'normal';
+        var layer_SignificantSpeicesPlants_16 = new L.geoJson(json_SignificantSpeicesPlants_16, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_SignificantSpeicesPlants_16',
+            layerName: 'layer_SignificantSpeicesPlants_16',
+            pane: 'pane_SignificantSpeicesPlants_16',
+            onEachFeature: pop_SignificantSpeicesPlants_16,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.shapeMarker(latlng, style_SignificantSpeicesPlants_16_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_SignificantSpeicesPlants_16);
+        map.addLayer(layer_SignificantSpeicesPlants_16);
+        var overlaysTree = [
+            {label: 'Significant Speices - Plants<br /><table><tr><td style="text-align: center;"><img src="legend/SignificantSpeicesPlants_16_FloatingCrystalwortRicciafluitans0.png" /></td><td>Floating Crystalwort (Riccia fluitans)</td></tr><tr><td style="text-align: center;"><img src="legend/SignificantSpeicesPlants_16_NuttallsWaterweedElodeanuttallii1.png" /></td><td>Nuttall\'s Waterweed (Elodea nuttallii)</td></tr><tr><td style="text-align: center;"><img src="legend/SignificantSpeicesPlants_16_SmallYellowFoxSedgeCarexannectensvarxanthocarpa2.png" /></td><td>Small Yellow Fox Sedge (Carex annectens var. xanthocarpa)</td></tr><tr><td style="text-align: center;"><img src="legend/SignificantSpeicesPlants_16_SmartweedDodderCuscutapolygonorum3.png" /></td><td>Smartweed Dodder (Cuscuta polygonorum) </td></tr></table>', layer: layer_SignificantSpeicesPlants_16},
+            {label: 'Significant Species - Dragonfly/Damselfly<br /><table><tr><td style="text-align: center;"><img src="legend/SignificantSpeciesDragonflyDamselfly_15_CanadaDarnerAeshnacanadensis0.png" /></td><td>Canada Darner (Aeshna canadensis)</td></tr><tr><td style="text-align: center;"><img src="legend/SignificantSpeciesDragonflyDamselfly_15_CyranoDarnerNasiaeschnapentacantha1.png" /></td><td>Cyrano Darner (Nasiaeschna pentacantha)</td></tr><tr><td style="text-align: center;"><img src="legend/SignificantSpeciesDragonflyDamselfly_15_ElegantSpreadwingLestesinaequalis2.png" /></td><td>Elegant Spreadwing (Lestes inaequalis)</td></tr><tr><td style="text-align: center;"><img src="legend/SignificantSpeciesDragonflyDamselfly_15_PrinceBaskettailEpithecaprinceps3.png" /></td><td>Prince Baskettail (Epitheca princeps)</td></tr><tr><td style="text-align: center;"><img src="legend/SignificantSpeciesDragonflyDamselfly_15_SlenderSpreadwingLestesrectangularis4.png" /></td><td>Slender Spreadwing (Lestes rectangularis)</td></tr><tr><td style="text-align: center;"><img src="legend/SignificantSpeciesDragonflyDamselfly_15_VesperBluetEnallagmavesperum5.png" /></td><td>Vesper Bluet (Enallagma vesperum)</td></tr></table>', layer: layer_SignificantSpeciesDragonflyDamselfly_15},
+            {label: 'Significant Species - Butterfly<br /><table><tr><td style="text-align: center;"><img src="legend/SignificantSpeciesButterfly_14_AmericanCopperLycaenaphlaes0.png" /></td><td>American Copper (Lycaena phlaes)</td></tr><tr><td style="text-align: center;"><img src="legend/SignificantSpeciesButterfly_14_MonarchDanausplexippus1.png" /></td><td>Monarch (Danaus plexippus)</td></tr></table>', layer: layer_SignificantSpeciesButterfly_14},
+            {label: 'Significant Speices - Reptile<br /><table><tr><td style="text-align: center;"><img src="legend/SignificantSpeicesReptile_13_SuspectedSnakeOverwinteringArea0.png" /></td><td>Suspected Snake Overwintering Area</td></tr><tr><td style="text-align: center;"><img src="legend/SignificantSpeicesReptile_13_HighConcentrationTurtleBaskingArea1.png" /></td><td>High Concentration Turtle Basking Area</td></tr><tr><td style="text-align: center;"><img src="legend/SignificantSpeicesReptile_13_TurtleNestingSnappingTurtle2.png" /></td><td>Turtle Nesting - Snapping Turtle</td></tr><tr><td style="text-align: center;"><img src="legend/SignificantSpeicesReptile_13_TurtleNestingSpeciesUnknown3.png" /></td><td>Turtle Nesting - Species Unknown</td></tr></table>', layer: layer_SignificantSpeicesReptile_13},
+            {label: 'Significant Speices - Birds<br /><table><tr><td style="text-align: center;"><img src="legend/SignificantSpeicesBirds_12_CommonNighthawkChordeilesminor0.png" /></td><td>Common Nighthawk (Chordeiles minor)</td></tr></table>', layer: layer_SignificantSpeicesBirds_12},
+            {label: 'Special Concern and Provincially Rare Species<br /><table><tr><td style="text-align: center;"><img src="legend/SpecialConcernandProvinciallyRareSpecies_11_BarnSwallow0.png" /></td><td>Barn Swallow</td></tr></table>', layer: layer_SpecialConcernandProvinciallyRareSpecies_11},
+        {label: '<b>PCB Management Concentrations > 40 ppm</b>', selectAllCheckbox: true, children: [
+            {label: '<img src="legend/AreaA_10.png" /> Area A', layer: layer_AreaA_10},
+            {label: '<img src="legend/AreaB_9.png" /> Area B', layer: layer_AreaB_9},
+            {label: '<img src="legend/AreaC_8.png" /> Area C', layer: layer_AreaC_8},]},
+        {label: '<b>PCB Sediment Concentrations > 50 ppm</b>', selectAllCheckbox: true, children: [
+            {label: '<img src="legend/AreaA_7.png" /> Area A', layer: layer_AreaA_7},
+            {label: '<img src="legend/AreaB_6.png" /> Area B', layer: layer_AreaB_6},
+            {label: '<img src="legend/AreaC_5.png" /> Area C', layer: layer_AreaC_5},]},
+            {label: '<img src="legend/ProvinciallySignificantLyonsCreekWetlandComplex_4.png" /> Provincially Significant Lyons Creek Wetland Complex', layer: layer_ProvinciallySignificantLyonsCreekWetlandComplex_4},
+            {label: '<img src="legend/Woodlands_3.png" /> Woodlands', layer: layer_Woodlands_3},
+            {label: '<img src="legend/AssessmentParcels_2.png" /> Assessment Parcels', layer: layer_AssessmentParcels_2},
+            {label: '<img src="legend/StudyAreaLyonsCreekTopofBank15m_1.png" /> Study Area (Lyons Creek Top of Bank + 15 m)', layer: layer_StudyAreaLyonsCreekTopofBank15m_1},
+            {label: "Google Hybrid", layer: layer_GoogleHybrid_0, radioGroup: 'bm' },]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: true,
+        });
+        lay.addTo(map);
+        setBounds();
+        resetLabels([layer_SignificantSpeicesBirds_12,layer_SignificantSpeicesReptile_13,layer_SignificantSpeciesButterfly_14,layer_SignificantSpeciesDragonflyDamselfly_15,layer_SignificantSpeicesPlants_16]);
+        map.on("zoomend", function(){
+            resetLabels([layer_SignificantSpeicesBirds_12,layer_SignificantSpeicesReptile_13,layer_SignificantSpeciesButterfly_14,layer_SignificantSpeciesDragonflyDamselfly_15,layer_SignificantSpeicesPlants_16]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_SignificantSpeicesBirds_12,layer_SignificantSpeicesReptile_13,layer_SignificantSpeciesButterfly_14,layer_SignificantSpeciesDragonflyDamselfly_15,layer_SignificantSpeicesPlants_16]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_SignificantSpeicesBirds_12,layer_SignificantSpeicesReptile_13,layer_SignificantSpeciesButterfly_14,layer_SignificantSpeciesDragonflyDamselfly_15,layer_SignificantSpeicesPlants_16]);
+        });
+        </script>
+    </body>
+</html>

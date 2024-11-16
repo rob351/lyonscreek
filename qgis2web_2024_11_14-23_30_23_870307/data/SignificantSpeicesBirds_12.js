@@ -1,0 +1,1 @@
+var json_SignificantSpeicesBirds_12 = {"type":"FeatureCollection","name":"SignificantSpeicesBirds_12","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[{"type":"Feature","properties":{"Label":"Common Nighthawk (Chordeiles minor)"},"geometry":{"type":"Point","coordinates":[-79.199526108373149,42.983141318192054]}}]}
